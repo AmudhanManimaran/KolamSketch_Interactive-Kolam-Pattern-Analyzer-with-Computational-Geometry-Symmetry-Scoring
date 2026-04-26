@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kolam JSON to Analysis</title>
+<style>
+    body { font-family: Arial, sans-serif; padding: 20px; background: #f4f4f4; }
+    textarea { width: 100%; height: 200px; padding: 10px; font-family: monospace; margin-bottom: 10px; }
+    pre { background: #fff; padding: 15px; border: 1px solid #ccc; white-space: pre-wrap; }
+    button { padding: 10px 20px; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<h1>Kolam JSON to Analysis</h1>
+<p>Paste your JSON content below and click "Convert":</p>
+<textarea id="jsonInput" placeholder='Paste JSON here...'></textarea>
+<br>
+<button onclick="convertJSON()">Convert</button>
+
+<h2>Analysis Output:</h2>
+<pre id="output"></pre>
+
+<script>
+function convertJSON() {
+    let input = document.getElementById("jsonInput").value;
+    let output = document.getElementById("output");
+    try {
+        let data = JSON.parse(input);
+
+        // Read data from JSON
+        let grid_size = data.grid_size || ["Unknown", "Unknown"];
+        let dots = data.dots || [];
+        let paths = data.paths || [];
+        let kolam_type = data.detected_type || data.kolam_type || "Unknown";
+        let grid_type = data.grid_type || "Unknown";
+        let spatial_reasoning = data.spatial_reasoning || {
+            continuous_nature: "Unknown",
+            path_type: "Unknown",
+            directionality: "Unknown"
+        };
+
+        // Format dots
+        let formattedDots = dots.map(d => `{'row': ${d.row}, 'col': ${d.col}}`);
+
+        // Prepare output
+        let result = `Grid size: ${grid_size.join('×')}\n`;
+        result += `Dots: ${dots.length} dots at positions: [${formattedDots.join(', ')}]\n`;
+        result += `Paths: ${paths.length} path(s) drawn.\n\n`;
+        result += `Analysis:\n`;
+        result += `Kolam Type: ${kolam_type}\n`;
+        result += `Grid Type: ${grid_type}\n`;
+        result += `Spatial Reasoning:\n`;
+        result += `- Continuous Nature: ${spatial_reasoning.continuous_nature}\n`;
+        result += `- Path Type: ${spatial_reasoning.path_type}\n`;
+        result += `- Directionality: ${spatial_reasoning.directionality}`;
+
+        output.textContent = result;
+    } catch (e) {
+        output.textContent = "Invalid JSON! Please check your input.";
+    }
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kolam Rotational Symmetry Checker</title>
+
+    <!-- Direct static path for CSS -->
+    <link rel="stylesheet" href="css/style.css" />
+
+    <style>
+        .container {
+            text-align: center;
+            padding: 20px;
+        }
+        canvas {
+            border: 1px solid #ccc;
+            background: #fff;
+            margin: 10px auto;
+            display: block;
+        }
+        #controls {
+            margin: 10px 0;
+        }
+        #rotation_value {
+            font-weight: bold;
+        }
+        #rotation_input {
+            margin-left: 10px;
+            width: 60px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Kolam Rotational Symmetry Checker</h2>
+
+        <!-- Upload Image -->
+        <input type="file" id="kolam_image" accept="image/*" />
+
+        <!-- Controls appear after upload -->
+        <div id="controls" style="display:none;">
+            <label>Rotation Degree: <span id="rotation_value">0°</span></label>
+            <input type="range" id="rotation_slider" min="0" max="360" value="0">
+            <input type="number" id="rotation_input" min="0" max="360" value="0">
+        </div>
+
+        <!-- Canvas for drawing/rotating -->
+        <canvas id="output_canvas" width="500" height="500"></canvas>
+    </div>
+
+    <!-- Direct static path for JS -->
+    <script src="js/symmetry_checker.js"></script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+body {
+    font-family: Arial, sans-serif;
+    background: #f4f4f4;
+    margin: 0;
+    padding: 20px;
+}
+
+.container {
+    max-width: 600px;
+    margin: 0 auto;
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+h1, h2 {
+    text-align: center;
+    color: #333;
+}
+
+input[type="file"], input[type="range"], input[type="number"], textarea, button {
+    margin: 10px;
+    padding: 8px;
+}
+
+canvas {
+    display: block;
+    margin: 0 auto;
+    border: 1px solid #ccc;
+}
+
+#controls {
+    text-align: center;
+}
+
+pre {
+    background: #fff;
+    padding: 15px;
+    border: 1px solid #ccc;
+    white-space: pre-wrap;
+}

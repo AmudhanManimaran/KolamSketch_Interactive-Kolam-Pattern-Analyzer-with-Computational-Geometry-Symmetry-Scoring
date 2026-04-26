@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Kolam Dot Selection + Freehand</title>
+<style>
+    body { font-family: sans-serif; text-align: center; margin: 20px; }
+    #controls { margin-bottom: 1em; }
+    #dotCanvas { border: 1px solid #444; cursor: crosshair; }
+    input { margin: 0 5px; }
+    button { margin: 0 5px; padding: 5px 10px; cursor: pointer; }
+    a { display: inline-block; margin-top: 10px; }
+    #symmetryBtn { background: #2196F3; color: #fff; } /* Blue for symmetry checker */
+</style>
+</head>
+<body>
+<h2>Selectable Dots + Freehand Kolam</h2>
+
+<div id="controls">
+    Rows: <input type="number" id="rows" value="5" min="1" style="width:60px">
+    Cols: <input type="number" id="cols" value="5" min="1" style="width:60px">
+    Spacing(px): <input type="number" id="spacing" value="80" min="20" style="width:60px">
+    <button id="makeGrid">Create Grid</button>
+    <br><br>
+    <button id="startDrawingBtn" style="background:#4CAF50;color:#fff;">Start Drawing</button>
+    <button id="send">Save + Classify</button>
+    <button id="resetBtn" style="background:#e44;color:#fff;">Reset</button>
+    <!-- New direct link to symmetry checker -->
+    <button id="symmetryBtn">Go to Symmetry Checker</button>
+</div>
+
+<canvas id="dotCanvas" width="600" height="600"></canvas>
+
+<a href="/json_to_analysis" target="_blank">Go to JSON-to-Analysis Page</a>
+
+<script>
+const canvas = document.getElementById("dotCanvas");
+const ctx = canvas.getContext("2d");
+
+let gridDots = [];
+let drawing = false;
+let currentPath = [];
+let allPaths = [];
+let isDrawingMode = false;
+
+function drawScene(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.strokeStyle="black";
+    ctx.lineWidth=2;
+    ctx.lineJoin="round";
+    ctx.lineCap="round";
+
+    for(const path of allPaths){
+        if(path.length<1) continue;
+        ctx.beginPath();
+        ctx.moveTo(path[0][0],path[0][1]);
+        for(let i=1;i<path.length;i++) ctx.lineTo(path[i][0],path[i][1]);
+        ctx.stroke();
+    }
+
+    if(drawing && currentPath.length > 0){
+        ctx.beginPath();
+        ctx.moveTo(currentPath[0][0],currentPath[0][1]);
+        for(let i=1;i<currentPath.length;i++) ctx.lineTo(currentPath[i][0],currentPath[i][1]);
+        ctx.stroke();
+    }
+
+    for(const d of gridDots){
+        ctx.beginPath();
+        ctx.arc(d.x,d.y,6,0,Math.PI*2);
+        ctx.fillStyle=d.active?"black":"#ccc";
+        ctx.fill();
+    }
+}
+
+function createGrid(r,c,spacing){
+    gridDots=[];
+    allPaths=[];
+    const offsetX=(canvas.width-(c-1)*spacing)/2;
+    const offsetY=(canvas.height-(r-1)*spacing)/2;
+    for(let i=0;i<r;i++){
+        for(let j=0;j<c;j++){
+            gridDots.push({x:offsetX+j*spacing,y:offsetY+i*spacing,row:i+1,col:j+1,active:false});
+        }
+    }
+    isDrawingMode = false;
+    drawScene();
+}
+
+canvas.addEventListener("click", e=>{
+    if(isDrawingMode) return;
+    const rect=canvas.getBoundingClientRect();
+    const x=e.clientX-rect.left;
+    const y=e.clientY-rect.top;
+    for(const d of gridDots){
+        const dx=d.x-x, dy=d.y-y;
+        if(dx*dx+dy*dy<10*10){ d.active=!d.active; drawScene(); break; }
+    }
+});
+
+canvas.addEventListener("mousedown", e=>{ 
+    if(!isDrawingMode) return;
+    drawing=true; 
+    currentPath=[[e.offsetX,e.offsetY]]; 
+});
+canvas.addEventListener("mousemove", e=>{ 
+    if(!drawing || !isDrawingMode) return; 
+    currentPath.push([e.offsetX,e.offsetY]); 
+    drawScene(); 
+});
+canvas.addEventListener("mouseup", endDraw);
+canvas.addEventListener("mouseleave", endDraw);
+function endDraw(){ 
+    if(!drawing || !isDrawingMode) return;
+    drawing=false; 
+    if(currentPath.length > 0) allPaths.push(currentPath.slice()); 
+    currentPath=[]; 
+    drawScene(); 
+}
+
+document.getElementById("makeGrid").onclick = ()=>{
+    createGrid(
+        parseInt(document.getElementById("rows").value), 
+        parseInt(document.getElementById("cols").value), 
+        parseInt(document.getElementById("spacing").value)
+    );
+};
+
+document.getElementById("startDrawingBtn").onclick = () => {
+    isDrawingMode = true;
+    alert("Dot selection is now disabled. You can start drawing freehand lines.");
+};
+
+document.getElementById("send").onclick = ()=>{
+    const activeDots=gridDots.filter(d=>d.active).map(d=>({x:d.x,y:d.y,row:d.row,col:d.col}));
+    fetch("/save_and_classify", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            paths: allPaths,
+            dots: activeDots,
+            grid_size: [parseInt(document.getElementById("rows").value), parseInt(document.getElementById("cols").value)]
+        })
+    })
+    .then(r => r.json())
+    .then(res => {
+        alert(
+            `Kolam type detected: ${res.kolam_type}\n` +
+            `Grid type: ${res.grid_type}\n` +
+            `Spatial Reasoning:\n` +
+            `- Continuous Nature: ${res.spatial_reasoning.continuous_nature}\n` +
+            `- Path Type: ${res.spatial_reasoning.path_type}\n` +
+            `- Directionality: ${res.spatial_reasoning.directionality}\n` +
+            `Saved as: ${res.saved_file}`
+        );
+    })
+    .catch(err => console.error(err));
+};
+
+document.getElementById("resetBtn").onclick = ()=>{
+    gridDots.forEach(d=>d.active=false);
+    allPaths=[];
+    isDrawingMode = false;
+    drawScene();
+    fetch("/reset", {method: "POST"})
+    .then(r=>r.json())
+    .then(res=>alert(res.message))
+    .catch(err=>console.error("Reset error:", err));
+};
+
+// **Direct navigation to symmetry checker page**
+document.getElementById("symmetryBtn").onclick = () => {
+    window.location.href = "/symmetry_area";
+};
+
+createGrid(5,5,80);
+</script>
+</body>
+</html>
